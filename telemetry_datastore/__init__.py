@@ -7,7 +7,6 @@ from time import gmtime
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 
-__VERSION__ = "1.0"
 __AUTHOR__ = "Carlos Tangerino"
 
 TS = 0

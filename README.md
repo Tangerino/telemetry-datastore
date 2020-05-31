@@ -5,7 +5,7 @@ using simple API call that will hide all the complexity from the user.
 
 No file system manipulation is necessary and several databases can be created to separate different contexts if necessary.
 
-Once the telemetry is inserted into the data base, a aggregation process is executed automatically.
+Once the telemetry is inserted into the database, an aggregation process is executed automatically.
 
 The raw data (the one inserted by the user) and the aggregated data is immediately available.
 
