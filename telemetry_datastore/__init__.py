@@ -23,6 +23,9 @@ class Job:
 
 
 class Timeseries:
+    """
+    This class is to make easy to generate telemetry data and store using the datastore component
+    """
     STATUS_OK = 0
     STATUS_ESTIMATED = 1
     STATUS_LAST = 2
@@ -40,6 +43,16 @@ class Timeseries:
         self.name = name
 
     def add(self, time_stamp, value, status=STATUS_OK):
+        """
+        Add new data point to the time series
+        :param time_stamp: Measurement time stamp
+               Can be an integer representing EPOCH in mili seconds
+               Can be a datetime object
+               Can be a date object
+        :param value: The data point value
+        :param status: The data point status (see STATUS_OK)
+        :return:
+        """
         epoch = date_to_epoch(time_stamp)
         if epoch is None:
             raise Exception("Invalid time stamp type")
@@ -47,6 +60,10 @@ class Timeseries:
         self.data_points.append(dp)
 
     def sort(self):
+        """
+        Sort the time series chronologically
+        :return:
+        """
         self.data_points.sort(key=lambda x: x[TS])
 
     def __repr__(self):
@@ -68,15 +85,6 @@ class Timeseries:
 
     def __len__(self):
         return len(self.data_points)
-
-    def to_dict(self):
-        o = []
-        for dp in self.data_points:
-            dt = epoch_to_date(dp[TS]).strftime("%Y-%m-%dT%H:%M:%S")
-            item = [dt, _int_if_possible(dp[VALUE]), dp[STATUS]]
-            o.append(item)
-        return o
-
 
 def epoch_to_date(utc):
     if utc > MAX_EPOCH_SEC:
@@ -383,6 +391,10 @@ class Datastore:
         self.is_opened = False
 
     def open(self):
+        """
+        Open the database
+        :return:
+        """
         try:
             self.conn = sqlite3.connect(self.database)
         except Exception as e:
@@ -398,6 +410,10 @@ class Datastore:
         self.is_opened = True
 
     def close(self):
+        """
+        Close the database
+        :return:
+        """
         if self.is_opened:
             self.conn.close()
             self.is_opened = False
@@ -410,9 +426,19 @@ class Datastore:
         self.close()
 
     def rebuild(self):
+        """
+        Rebuild the database
+        :return:
+        """
         _rebuild(self.conn)
 
     def create(self, time_series, ttl=0):
+        """
+        Create time series (add new data points)
+        :param time_series: The timeseries object
+        :param ttl: Time to live in seconds
+        :return:
+        """
         try:
             jobs = {}
             id = _get_sensor_id(self.conn, time_series.name)
@@ -440,6 +466,10 @@ class Datastore:
             print("ERROR - data_create - {} - {}".format(e, time_series))
 
     def sensors(self):
+        """
+        Get the sensor in the database
+        :return:
+        """
         query = '''
             SELECT id, name, ttl FROM sensors ORDER BY id
         '''
@@ -450,6 +480,12 @@ class Datastore:
         return sensors
 
     def ttl(self, sensor_id, ttl):
+        """
+        Set a TTL (in seconds) for a given sensor
+        :param sensor_id:
+        :param ttl:
+        :return:
+        """
         q = ""
         try:
             cur = self.conn.cursor()
@@ -463,6 +499,14 @@ class Datastore:
             return False
 
     def raw(self, id_list, start_date, end_date, iso_date=False):
+        """
+        Read telemetry raw data (the one user has inserted)
+        :param id_list: A sensor  ID or list of sensors IDs
+        :param start_date: Start date
+        :param end_date: End data
+        :param iso_date: Timestamp is formatted as ISO 8601 instead EPOCH in mili seconds
+        :return:
+        """
         """
         Read series from the interval table
         :param iso_date:
@@ -499,6 +543,16 @@ class Datastore:
         return telemetry_list
 
     def rollup(self, id_list, start_date, end_date, group_by, function, iso_date=False):
+        """
+        Read aggregated telemetry data (the one user calculated by the service)
+        :param id_list: A sensor  ID or list of sensors IDs
+        :param start_date: Start date
+        :param end_date: End data
+        :param group_by: [hour | day | month | year]
+        :param function:  Aggregation function [max | min | avg | sum | count]
+        :param iso_date: Timestamp is formatted as ISO 8601 instead EPOCH in mili seconds
+        :return:
+        """
         id_list = _stringfy_list(id_list)
         sd = date_to_epoch(start_date) // 1000
         ed = date_to_epoch(end_date) // 1000
@@ -549,6 +603,14 @@ class Datastore:
         return telemetry_list
 
     def raw_dump(self, start_index, limit=100):
+        """
+        Dump raw telemetry data
+        User keep track of last ID received, new data points will make this ID to grow
+        so user can keep track of new data insertions without care about the data time stamp
+        :param start_index: Telemetry sequential index
+        :param limit: Maximum number of data points per call
+        :return:
+        """
         q = '''
             SELECT id, sensor_id, ts, value, status
             FROM series
@@ -571,6 +633,12 @@ class Datastore:
         return d
 
     def rollup_dump(self, start_index, limit=100):
+        """
+        Dump aggregated telemetry data
+        :param start_index: Telemetry sequential index
+        :param limit: Maximum number of data points per call
+        :return:
+        """
         q = '''
             SELECT id, sensor_id, type, ts, vmax, vmin, vsum, vcount, vavg
             FROM rollup
@@ -597,6 +665,13 @@ class Datastore:
         return d
 
     def delete(self, sensor_id, start_date, end_date):
+        """
+        Delete telemetry data
+        :param sensor_id:
+        :param start_date:
+        :param end_date:
+        :return:
+        """
         sd = date_to_epoch(start_date)
         ed = date_to_epoch(end_date)
         if sd is None or ed is None:
@@ -614,6 +689,10 @@ class Datastore:
             return False
 
     def purge(self):
+        """
+        Delete telemetry data based on the TTL parameter for each sensor
+        :return:
+        """
         q = ""
         try:
             cur = self.conn.cursor()

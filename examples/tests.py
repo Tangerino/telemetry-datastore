@@ -21,8 +21,8 @@ if __name__ == '__main__':
                 for values in data_points.values():
                     for value in values:
                         print("\t{} => {}".format(value["ts"], value["value"]))
-                # print("")
-                # data_points = ds.raw([sensor_id], today, "2022-01-01", iso_date=True)
-                # for values in data_points.values():
-                #     for value in values:
-                #         print("\t{} => {}".format(value["ts"], value["value"]))
+                print("")
+                data_points = ds.raw([sensor_id], today, "2022-01-01", iso_date=True)
+                for values in data_points.values():
+                    for value in values:
+                        print("\t{} => {}".format(value["ts"], value["value"]))

@@ -24,3 +24,11 @@ Data is aggregated over the hour, day, month and year.
 - Data manipulation at the edge
  
 
+## Installation
+
+```angular2
+pip3 install telemetry-datastore
+```
+
+## Examples
+Please look the the `examples` folder
